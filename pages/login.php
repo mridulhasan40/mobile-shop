@@ -25,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'] ?? '';
 
     if (empty($email)) $errors[] = 'Email is required.';
+    if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'Please enter a valid email address.';
     if (empty($password)) $errors[] = 'Password is required.';
 
     if (empty($errors)) {
@@ -80,7 +81,7 @@ require_once __DIR__ . '/../includes/header.php';
 
         <div class="auth-divider">Demo Credentials</div>
         <div style="font-size: var(--font-size-xs); color: var(--text-muted); text-align: center; line-height: 1.8;">
-           
+            
             <strong>User:</strong> john@example.com / user123
         </div>
     </div>

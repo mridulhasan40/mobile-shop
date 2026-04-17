@@ -31,36 +31,39 @@ $categoryIcons = [
 <!-- Hero -->
 <section class="hero" id="hero">
     <div class="container">
-        <p class="hero-label">New Collection 2026</p>
-        <h1 class="hero-title">The Next Generation<br>of <span>Mobile Technology</span></h1>
-        <p class="hero-desc">Premium smartphones and accessories from world-class brands.<br>Experience innovation, performance, and style — all in one place.</p>
-        <div class="hero-actions">
-            <a href="<?php echo SITE_URL; ?>/pages/products.php" class="btn btn-primary btn-lg">
-                Explore Products <i class="fas fa-arrow-right"></i>
-            </a>
-            <a href="<?php echo SITE_URL; ?>/pages/products.php?featured=1" class="btn btn-ghost btn-lg">
-                <i class="fas fa-star"></i> Featured Deals
-            </a>
-        </div>
-        <div class="hero-metrics">
-            <div class="hero-metric">
-                <strong>500+</strong>
-                <span>Products</span>
+        <div class="hero-grid">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <i class="fas fa-bolt"></i> New Collection 2026
+                </div>
+                <h1>The Next Generation<br>of <span class="highlight">Mobile Technology</span></h1>
+                <p>Premium smartphones and accessories from world-class brands. Experience innovation, performance, and style — all in one place.</p>
+                <div class="hero-actions">
+                    <a href="<?php echo SITE_URL; ?>/pages/products.php" class="btn btn-primary btn-lg">
+                        Explore Products <i class="fas fa-arrow-right"></i>
+                    </a>
+                    <a href="<?php echo SITE_URL; ?>/pages/products.php?featured=1" class="btn btn-ghost btn-lg">
+                        <i class="fas fa-star"></i> Featured Deals
+                    </a>
+                </div>
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <h3>500+</h3>
+                        <p>Products</p>
+                    </div>
+                    <div class="hero-stat">
+                        <h3>50+</h3>
+                        <p>Brands</p>
+                    </div>
+                    <div class="hero-stat">
+                        <h3>24/7</h3>
+                        <p>Support</p>
+                    </div>
+                </div>
             </div>
-            <div class="hero-metric-divider"></div>
-            <div class="hero-metric">
-                <strong>50+</strong>
-                <span>Brands</span>
-            </div>
-            <div class="hero-metric-divider"></div>
-            <div class="hero-metric">
-                <strong>24/7</strong>
-                <span>Support</span>
-            </div>
-            <div class="hero-metric-divider"></div>
-            <div class="hero-metric">
-                <strong>Free</strong>
-                <span>Shipping 99$+</span>
+            <div class="hero-image">
+                <div class="hero-image-glow"></div>
+                <img src="<?php echo SITE_URL; ?>/assets/images/hero-banner.png" alt="Latest Smartphones Collection">
             </div>
         </div>
     </div>
@@ -112,7 +115,7 @@ $categoryIcons = [
         <div class="category-grid">
             <?php foreach ($categories as $cat): ?>
             <a href="<?php echo SITE_URL; ?>/pages/products.php?category=<?php echo $cat['id']; ?>" class="category-card">
-                <div class="category-icon">
+                <div class="category-card-icon">
                     <i class="fas <?php echo $categoryIcons[$cat['name']] ?? 'fa-tag'; ?>"></i>
                 </div>
                 <h4><?php echo sanitize($cat['name']); ?></h4>

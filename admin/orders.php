@@ -8,13 +8,54 @@ require_once __DIR__ . '/includes/header.php';
 // Handle status update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['status'])) {
     $orderId = (int)$_POST['order_id'];
-    $status = $_POST['status'];
+    $newStatus = $_POST['status'];
     $validStatuses = ['pending', 'processing', 'delivered', 'cancelled'];
 
-    if (in_array($status, $validStatuses)) {
-        $stmt = $db->prepare("UPDATE orders SET status = ? WHERE id = ?");
-        $stmt->execute([$status, $orderId]);
-        setFlash('success', "Order #$orderId status updated to " . ucfirst($status));
+    if (in_array($newStatus, $validStatuses)) {
+        // Get current order status
+        $currentStmt = $db->prepare("SELECT status FROM orders WHERE id = ?");
+        $currentStmt->execute([$orderId]);
+        $currentOrder = $currentStmt->fetch();
+
+        if ($currentOrder && $currentOrder['status'] !== $newStatus) {
+            try {
+                $db->beginTransaction();
+
+                // Get order items for stock adjustment
+                $itemsStmt = $db->prepare("SELECT product_id, quantity FROM order_items WHERE order_id = ?");
+                $itemsStmt->execute([$orderId]);
+                $items = $itemsStmt->fetchAll();
+
+                // If changing TO cancelled → restore stock
+                if ($newStatus === 'cancelled' && $currentOrder['status'] !== 'cancelled') {
+                    foreach ($items as $item) {
+                        $stockStmt = $db->prepare("UPDATE products SET stock = stock + ? WHERE id = ?");
+                        $stockStmt->execute([$item['quantity'], $item['product_id']]);
+                    }
+                }
+
+                // If changing FROM cancelled to another status → re-deduct stock
+                if ($currentOrder['status'] === 'cancelled' && $newStatus !== 'cancelled') {
+                    foreach ($items as $item) {
+                        $stockStmt = $db->prepare("UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?");
+                        $stockStmt->execute([$item['quantity'], $item['product_id'], $item['quantity']]);
+                        if ($stockStmt->rowCount() === 0) {
+                            throw new Exception("Insufficient stock to restore order.");
+                        }
+                    }
+                }
+
+                // Update order status
+                $stmt = $db->prepare("UPDATE orders SET status = ? WHERE id = ?");
+                $stmt->execute([$newStatus, $orderId]);
+
+                $db->commit();
+                setFlash('success', "Order #$orderId status updated to " . ucfirst($newStatus));
+            } catch (Exception $e) {
+                $db->rollBack();
+                setFlash('error', "Failed to update order: " . $e->getMessage());
+            }
+        }
     }
     redirect(SITE_URL . '/admin/orders.php');
 }
