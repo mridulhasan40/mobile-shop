@@ -10,9 +10,9 @@
                 </a>
                 <p>Your one-stop destination for premium mobile phones and accessories. We bring you the latest technology at the best prices.</p>
                 <div class="footer-social">
-                    <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="https://www.facebook.com/share/1GyG54dWTq/?mibextid=wwXIfr" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
                     <a href="https://github.com/mridulhasan40" aria-label="GitHub"><i class="fab fa-github"></i></a>
-                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="https://www.instagram.com/mridulhasan4?igsh=dmZsMmdhamN0OG8%3D&utm_source=qr" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
                     <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
                 </div>
             </div>
