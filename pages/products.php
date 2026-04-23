@@ -205,6 +205,9 @@ $queryString = http_build_query($queryParams);
                             <?php if ($product['featured']): ?>
                             <span class="product-card-badge">Featured</span>
                             <?php endif; ?>
+                            <?php if (hasDiscount($product)): ?>
+                            <span class="discount-badge-card">-<?php echo getDiscountPercent($product); ?>% OFF</span>
+                            <?php endif; ?>
                         </div>
                         <div class="product-card-body">
                             <div class="product-card-brand"><?php echo sanitize($product['brand']); ?></div>
@@ -214,7 +217,7 @@ $queryString = http_build_query($queryParams);
                                 </a>
                             </h3>
                             <div class="product-card-footer">
-                                <span class="product-card-price"><?php echo formatPrice($product['price']); ?></span>
+                                <?php echo renderCardPrice($product); ?>
                                 <?php if ($product['stock'] > 0): ?>
                                 <button class="btn-add-cart" onclick="addToCart(<?php echo $product['id']; ?>)" title="Add to Cart">
                                     <i class="fas fa-plus"></i>

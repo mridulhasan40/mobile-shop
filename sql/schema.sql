@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS products (
     name VARCHAR(200) NOT NULL,
     brand VARCHAR(100) NOT NULL,
     price DECIMAL(10,2) NOT NULL,
+    discount_price DECIMAL(10,2) DEFAULT NULL,
     description TEXT DEFAULT NULL,
     image VARCHAR(255) DEFAULT 'default.png',
     stock INT DEFAULT 0,

@@ -4,15 +4,16 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 require_once __DIR__ . '/functions.php';
 
-$cartCount = getCartCount();
-$currentPage = basename($_SERVER['PHP_SELF']);
+$cartCount     = getCartCount();
+$wishlistCount = getWishlistCount();
+$currentPage   = basename($_SERVER['PHP_SELF']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="MobileShop — Premium mobile phones & accessories. Browse the latest smartphones from Samsung, Apple, Xiaomi & more.">
+    <meta name="description" content="<?php echo isset($pageDesc) ? sanitize($pageDesc) : 'MobileShop — Premium mobile phones &amp; accessories. Browse the latest smartphones from Samsung, Apple, Xiaomi &amp; more.'; ?>">
     <meta name="site-url" content="<?php echo SITE_URL; ?>">
     <title><?php echo isset($pageTitle) ? sanitize($pageTitle) . ' — ' . SITE_NAME : SITE_NAME . ' — Premium Mobile Store'; ?></title>
     
@@ -60,6 +61,18 @@ $currentPage = basename($_SERVER['PHP_SELF']);
 
         <!-- Actions -->
         <div class="header-actions">
+            <!-- Wishlist -->
+            <?php if (isLoggedIn()): ?>
+            <a href="<?php echo SITE_URL; ?>/pages/wishlist.php" class="cart-btn" id="wishlist-btn"
+               title="My Wishlist"
+               style="<?php echo $currentPage === 'wishlist.php' ? 'color:var(--accent-cyan);' : ''; ?>">
+                <i class="fas fa-heart"></i>
+                <?php if ($wishlistCount > 0): ?>
+                <span class="cart-badge" id="wishlist-badge"><?php echo $wishlistCount; ?></span>
+                <?php endif; ?>
+            </a>
+            <?php endif; ?>
+
             <!-- Cart -->
             <a href="<?php echo SITE_URL; ?>/pages/cart.php" class="cart-btn" id="cart-btn">
                 <i class="fas fa-shopping-bag"></i>

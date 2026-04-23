@@ -7,7 +7,6 @@ require_once __DIR__ . '/../includes/auth.php';
 // Handle logout
 if (isset($_GET['logout'])) {
     logoutUser();
-    // Restart session so setFlash can store the message
     session_start();
     setFlash('success', 'You have been logged out.');
     redirect(SITE_URL . '/pages/login.php');
@@ -19,9 +18,10 @@ if (isLoggedIn()) {
 }
 
 $errors = [];
+$email  = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim($_POST['email'] ?? '');
+    $email    = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
 
     if (empty($email)) $errors[] = 'Email is required.';
@@ -29,16 +29,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($password)) $errors[] = 'Password is required.';
 
     if (empty($errors)) {
-        if (loginUser($email, $password)) {
-            setFlash('success', 'Welcome back, ' . $_SESSION['user_name'] . '!');
-            
-            // Redirect admin to admin panel
-            if (isAdmin()) {
-                redirect(SITE_URL . '/admin/');
-            }
-            redirect(SITE_URL . '/index.php');
+        // Rate limit check
+        if (!checkLoginRateLimit($email)) {
+            $errors[] = 'Too many failed attempts. Please wait 15 minutes before trying again.';
         } else {
-            $errors[] = 'Invalid email or password.';
+            $result = loginUser($email, $password);
+
+            if ($result === 'success') {
+                setFlash('success', 'Welcome back, ' . $_SESSION['user_name'] . '!');
+                if (isAdmin()) redirect(SITE_URL . '/admin/');
+                redirect(SITE_URL . '/index.php');
+
+            } elseif ($result === 'banned') {
+                $errors[] = 'Your account has been suspended. Please contact support.';
+
+            } else {
+                recordLoginAttempt($email);
+                $remaining = getRemainingAttempts($email);
+                if ($remaining > 0) {
+                    $errors[] = 'Invalid email or password. ' . $remaining . ' attempt(s) remaining.';
+                } else {
+                    $errors[] = 'Too many failed attempts. Please wait 15 minutes before trying again.';
+                }
+            }
         }
     }
 }
@@ -62,12 +75,22 @@ require_once __DIR__ . '/../includes/header.php';
         <form method="POST" action="">
             <div class="form-group">
                 <label class="form-label" for="email">Email Address</label>
-                <input type="email" id="email" name="email" class="form-control" placeholder="Enter your email" value="<?php echo sanitize($email ?? ''); ?>" required autofocus>
+                <input type="email" id="email" name="email" class="form-control"
+                    placeholder="Enter your email"
+                    value="<?php echo sanitize($email); ?>"
+                    required autofocus>
             </div>
 
             <div class="form-group">
-                <label class="form-label" for="password">Password</label>
-                <input type="password" id="password" name="password" class="form-control" placeholder="Enter your password" required>
+                <div class="flex justify-between items-center" style="margin-bottom: 6px;">
+                    <label class="form-label" for="password" style="margin:0;">Password</label>
+                    <a href="<?php echo SITE_URL; ?>/pages/forgot-password.php"
+                       style="font-size:var(--font-size-xs); color:var(--accent-cyan);">
+                        Forgot password?
+                    </a>
+                </div>
+                <input type="password" id="password" name="password" class="form-control"
+                    placeholder="Enter your password" required>
             </div>
 
             <button type="submit" class="btn btn-primary btn-lg w-full">
@@ -81,7 +104,6 @@ require_once __DIR__ . '/../includes/header.php';
 
         <div class="auth-divider">Demo Credentials</div>
         <div style="font-size: var(--font-size-xs); color: var(--text-muted); text-align: center; line-height: 1.8;">
-            
             <strong>User:</strong> john@example.com / user123
         </div>
     </div>

@@ -2,14 +2,17 @@
 /**
  * Admin — Manage Orders
  */
-$adminPageTitle = 'Orders';
-require_once __DIR__ . '/includes/header.php';
 
-// Handle status update
+// ── Process status update BEFORE any HTML output ────────────────────────────
+require_once __DIR__ . '/../includes/auth.php';
+requireAdmin();
+$db = getDB();
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['status'])) {
     $orderId = (int)$_POST['order_id'];
     $newStatus = $_POST['status'];
-    $validStatuses = ['pending', 'processing', 'delivered', 'cancelled'];
+    $note = trim($_POST['note'] ?? '');
+    $validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
 
     if (in_array($newStatus, $validStatuses)) {
         // Get current order status
@@ -49,6 +52,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['s
                 $stmt = $db->prepare("UPDATE orders SET status = ? WHERE id = ?");
                 $stmt->execute([$newStatus, $orderId]);
 
+                // Record status history
+                addOrderStatusHistory($orderId, $newStatus, $note ?: 'Status updated by admin.');
+
                 $db->commit();
                 setFlash('success', "Order #$orderId status updated to " . ucfirst($newStatus));
             } catch (Exception $e) {
@@ -59,6 +65,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['s
     }
     redirect(SITE_URL . '/admin/orders.php');
 }
+
+// ── Now include header (HTML output starts here) ────────────────────────────
+$adminPageTitle = 'Orders';
+require_once __DIR__ . '/includes/header.php';
 
 // Filter
 $statusFilter = $_GET['status'] ?? '';
@@ -136,16 +146,25 @@ if (isset($_GET['view'])) {
             </div>
 
             <!-- Update Status -->
-            <form method="POST" style="margin-top: var(--space-6); padding-top: var(--space-4); border-top: 1px solid var(--border-color); display: flex; gap: var(--space-3); align-items: center;">
+            <form method="POST" style="margin-top:var(--space-6);padding-top:var(--space-4);border-top:1px solid var(--border-color);">
                 <input type="hidden" name="order_id" value="<?php echo $orderDetail['id']; ?>">
-                <label style="font-size: var(--font-size-sm); font-weight: 600;">Update Status:</label>
-                <select name="status" class="status-select">
-                    <option value="pending" <?php echo $orderDetail['status'] === 'pending' ? 'selected' : ''; ?>>Pending</option>
-                    <option value="processing" <?php echo $orderDetail['status'] === 'processing' ? 'selected' : ''; ?>>Processing</option>
-                    <option value="delivered" <?php echo $orderDetail['status'] === 'delivered' ? 'selected' : ''; ?>>Delivered</option>
-                    <option value="cancelled" <?php echo $orderDetail['status'] === 'cancelled' ? 'selected' : ''; ?>>Cancelled</option>
-                </select>
-                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> Update</button>
+                <div class="grid grid-2" style="gap:var(--space-3);margin-bottom:var(--space-3);">
+                    <div>
+                        <label class="form-label">Update Status</label>
+                        <select name="status" class="status-select" style="width:100%;">
+                            <option value="pending"    <?php echo $orderDetail['status']==='pending'    ? 'selected':''; ?>>Pending</option>
+                            <option value="processing" <?php echo $orderDetail['status']==='processing' ? 'selected':''; ?>>Processing</option>
+                            <option value="shipped"    <?php echo $orderDetail['status']==='shipped'    ? 'selected':''; ?>>Shipped</option>
+                            <option value="delivered"  <?php echo $orderDetail['status']==='delivered'  ? 'selected':''; ?>>Delivered</option>
+                            <option value="cancelled"  <?php echo $orderDetail['status']==='cancelled'  ? 'selected':''; ?>>Cancelled</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Note (optional)</label>
+                        <input type="text" name="note" class="form-control" placeholder="e.g. Shipped via RedX #12345">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> Update Status</button>
             </form>
         </div>
     </div>
@@ -181,12 +200,13 @@ if (isset($_GET['view'])) {
 <?php else: ?>
 <!-- Orders List -->
 <div class="flex justify-between items-center" style="margin-bottom: var(--space-6);">
-    <div class="flex gap-2">
+    <div class="flex gap-2" style="flex-wrap:wrap;">
         <a href="?status=" class="btn <?php echo !$statusFilter ? 'btn-primary' : 'btn-secondary'; ?> btn-sm">All</a>
-        <a href="?status=pending" class="btn <?php echo $statusFilter === 'pending' ? 'btn-primary' : 'btn-secondary'; ?> btn-sm">Pending</a>
-        <a href="?status=processing" class="btn <?php echo $statusFilter === 'processing' ? 'btn-primary' : 'btn-secondary'; ?> btn-sm">Processing</a>
-        <a href="?status=delivered" class="btn <?php echo $statusFilter === 'delivered' ? 'btn-primary' : 'btn-secondary'; ?> btn-sm">Delivered</a>
-        <a href="?status=cancelled" class="btn <?php echo $statusFilter === 'cancelled' ? 'btn-primary' : 'btn-secondary'; ?> btn-sm">Cancelled</a>
+        <a href="?status=pending"    class="btn <?php echo $statusFilter==='pending'    ? 'btn-primary' : 'btn-secondary'; ?> btn-sm">Pending</a>
+        <a href="?status=processing" class="btn <?php echo $statusFilter==='processing' ? 'btn-primary' : 'btn-secondary'; ?> btn-sm">Processing</a>
+        <a href="?status=shipped"    class="btn <?php echo $statusFilter==='shipped'    ? 'btn-primary' : 'btn-secondary'; ?> btn-sm">Shipped</a>
+        <a href="?status=delivered"  class="btn <?php echo $statusFilter==='delivered'  ? 'btn-primary' : 'btn-secondary'; ?> btn-sm">Delivered</a>
+        <a href="?status=cancelled"  class="btn <?php echo $statusFilter==='cancelled'  ? 'btn-primary' : 'btn-secondary'; ?> btn-sm">Cancelled</a>
     </div>
     <span style="color: var(--text-muted); font-size: var(--font-size-sm);"><?php echo $total; ?> orders</span>
 </div>
@@ -225,10 +245,11 @@ if (isset($_GET['view'])) {
                         <form method="POST" style="display: inline;">
                             <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
                             <select name="status" class="status-select" onchange="this.form.submit()">
-                                <option value="pending" <?php echo $order['status'] === 'pending' ? 'selected' : ''; ?>>Pending</option>
-                                <option value="processing" <?php echo $order['status'] === 'processing' ? 'selected' : ''; ?>>Processing</option>
-                                <option value="delivered" <?php echo $order['status'] === 'delivered' ? 'selected' : ''; ?>>Delivered</option>
-                                <option value="cancelled" <?php echo $order['status'] === 'cancelled' ? 'selected' : ''; ?>>Cancelled</option>
+                                <option value="pending"    <?php echo $order['status']==='pending'    ? 'selected':''; ?>>Pending</option>
+                                <option value="processing" <?php echo $order['status']==='processing' ? 'selected':''; ?>>Processing</option>
+                                <option value="shipped"    <?php echo $order['status']==='shipped'    ? 'selected':''; ?>>Shipped</option>
+                                <option value="delivered"  <?php echo $order['status']==='delivered'  ? 'selected':''; ?>>Delivered</option>
+                                <option value="cancelled"  <?php echo $order['status']==='cancelled'  ? 'selected':''; ?>>Cancelled</option>
                             </select>
                         </form>
                     </td>

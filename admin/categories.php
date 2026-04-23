@@ -2,10 +2,13 @@
 /**
  * Admin — Manage Categories
  */
-$adminPageTitle = 'Categories';
-require_once __DIR__ . '/includes/header.php';
 
-// Handle add
+// ── Process actions BEFORE any HTML output ──────────────────────────────────
+require_once __DIR__ . '/../includes/auth.php';
+requireAdmin();
+$db = getDB();
+
+// Handle add/edit
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($_POST['action'] === 'add') {
         $name = trim($_POST['name'] ?? '');
@@ -46,6 +49,10 @@ if (isset($_GET['delete'])) {
     setFlash('success', 'Category deleted.');
     redirect(SITE_URL . '/admin/categories.php');
 }
+
+// ── Now include header (HTML output starts here) ────────────────────────────
+$adminPageTitle = 'Categories';
+require_once __DIR__ . '/includes/header.php';
 
 // Fetch categories with product counts
 $categories = $db->query("SELECT c.*, COUNT(p.id) as product_count FROM categories c LEFT JOIN products p ON c.id = p.category_id GROUP BY c.id ORDER BY c.name")->fetchAll();

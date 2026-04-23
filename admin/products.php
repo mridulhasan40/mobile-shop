@@ -2,10 +2,12 @@
 /**
  * Admin — Manage Products
  */
-$adminPageTitle = 'Products';
-require_once __DIR__ . '/includes/header.php';
 
-// Handle delete
+// ── Handle delete BEFORE any HTML output ────────────────────────────────────
+require_once __DIR__ . '/../includes/auth.php';
+requireAdmin();
+$db = getDB();
+
 if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     $deleteId = (int)$_GET['delete'];
     $stmt = $db->prepare("SELECT image FROM products WHERE id = ?");
@@ -23,6 +25,10 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     }
     redirect(SITE_URL . '/admin/products.php');
 }
+
+// ── Now include header (HTML output starts here) ────────────────────────────
+$adminPageTitle = 'Products';
+require_once __DIR__ . '/includes/header.php';
 
 // Search
 $search = trim($_GET['search'] ?? '');
@@ -93,7 +99,15 @@ $products = $stmt->fetchAll();
                     </td>
                     <td><?php echo sanitize($p['category_name'] ?? 'N/A'); ?></td>
                     <td><?php echo sanitize($p['brand']); ?></td>
-                    <td style="font-weight: 600;"><?php echo formatPrice($p['price']); ?></td>
+                    <td>
+                        <?php if (hasDiscount($p)): ?>
+                        <span style="text-decoration:line-through;color:var(--text-muted);font-size:var(--font-size-xs);"><?php echo formatPrice($p['price']); ?></span><br>
+                        <span style="font-weight:700;color:var(--accent-green);"><?php echo formatPrice($p['discount_price']); ?></span>
+                        <span class="badge" style="background:rgba(239,68,68,.1);color:#ef4444;font-size:10px;margin-left:4px;">-<?php echo getDiscountPercent($p); ?>%</span>
+                        <?php else: ?>
+                        <span style="font-weight:600;"><?php echo formatPrice($p['price']); ?></span>
+                        <?php endif; ?>
+                    </td>
                     <td>
                         <span class="badge <?php echo $p['stock'] > 5 ? 'badge-in-stock' : ($p['stock'] > 0 ? 'badge-pending' : 'badge-out-of-stock'); ?>">
                             <?php echo $p['stock']; ?>

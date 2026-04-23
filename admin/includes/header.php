@@ -1,11 +1,18 @@
 <?php
 /**
  * Admin Header/Layout Start
+ *
+ * Pages that need to redirect (POST handlers) should include auth.php
+ * and call requireAdmin() / getDB() themselves BEFORE including this file.
+ * This file will skip re-initialising if already done.
  */
-require_once __DIR__ . '/../../includes/auth.php';
-requireAdmin();
-
-$db = getDB();
+if (!function_exists('isLoggedIn')) {
+    require_once __DIR__ . '/../../includes/auth.php';
+}
+if (!function_exists('requireAdmin') || !isset($db)) {
+    requireAdmin();
+    $db = getDB();
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">

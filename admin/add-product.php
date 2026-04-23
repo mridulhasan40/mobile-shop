@@ -2,8 +2,11 @@
 /**
  * Admin — Add Product
  */
-$adminPageTitle = 'Add Product';
-require_once __DIR__ . '/includes/header.php';
+
+// ── Process form BEFORE any HTML output ─────────────────────────────────────
+require_once __DIR__ . '/../includes/auth.php';
+requireAdmin();
+$db = getDB();
 
 $categories = getCategories();
 $errors = [];
@@ -16,6 +19,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name'] ?? '');
     $brand = trim($_POST['brand'] ?? '');
     $price = (float)($_POST['price'] ?? 0);
+    $discountPrice = trim($_POST['discount_price'] ?? '');
+    $discountPrice = $discountPrice !== '' ? (float)$discountPrice : null;
     $description = trim($_POST['description'] ?? '');
     $categoryId = (int)($_POST['category_id'] ?? 0);
     $stock = (int)($_POST['stock'] ?? 0);
@@ -25,6 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($name)) $errors[] = 'Product name is required.';
     if (empty($brand)) $errors[] = 'Brand is required.';
     if ($price <= 0) $errors[] = 'Price must be greater than 0.';
+    if ($discountPrice !== null && $discountPrice >= $price) $errors[] = 'Discount price must be less than the regular price.';
+    if ($discountPrice !== null && $discountPrice < 0) $errors[] = 'Discount price cannot be negative.';
 
     // Handle image upload
     if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
@@ -37,13 +44,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($errors)) {
-        $stmt = $db->prepare("INSERT INTO products (name, brand, price, description, category_id, stock, featured, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$name, $brand, $price, $description, $categoryId ?: null, $stock, $featured, $image]);
+        $stmt = $db->prepare("INSERT INTO products (name, brand, price, discount_price, description, category_id, stock, featured, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$name, $brand, $price, $discountPrice, $description, $categoryId ?: null, $stock, $featured, $image]);
 
         setFlash('success', 'Product added successfully!');
         redirect(SITE_URL . '/admin/products.php');
     }
 }
+
+// ── Now include header (HTML output starts here) ────────────────────────────
+$adminPageTitle = 'Add Product';
+require_once __DIR__ . '/includes/header.php';
 ?>
 
 <?php if (!empty($errors)): ?>
@@ -80,6 +91,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label class="form-label" for="price">Price ($) *</label>
                     <input type="number" id="price" name="price" class="form-control" step="0.01" min="0" value="<?php echo $price ?? ''; ?>" required>
                 </div>
+                <div class="form-group">
+                    <label class="form-label" for="discount_price">Discount Price ($) <small style="color:var(--text-muted);font-weight:400;">— leave empty for no discount</small></label>
+                    <input type="number" id="discount_price" name="discount_price" class="form-control" step="0.01" min="0" value="<?php echo $discountPrice ?? ''; ?>" placeholder="e.g. 899.99">
+                </div>
+            </div>
+
+            <div class="form-row">
                 <div class="form-group">
                     <label class="form-label" for="category_id">Category</label>
                     <select id="category_id" name="category_id" class="form-control">

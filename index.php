@@ -145,6 +145,9 @@ $categoryIcons = [
                     <a href="<?php echo SITE_URL; ?>/pages/product-detail.php?id=<?php echo $product['id']; ?>">
                         <img src="<?php echo getProductImage($product['image']); ?>" alt="<?php echo sanitize($product['name']); ?>">
                     </a>
+                    <?php if (hasDiscount($product)): ?>
+                    <span class="discount-badge-card">-<?php echo getDiscountPercent($product); ?>% OFF</span>
+                    <?php endif; ?>
                     <span class="product-card-badge">Featured</span>
                 </div>
                 <div class="product-card-body">
@@ -155,7 +158,7 @@ $categoryIcons = [
                         </a>
                     </h3>
                     <div class="product-card-footer">
-                        <span class="product-card-price"><?php echo formatPrice($product['price']); ?></span>
+                        <?php echo renderCardPrice($product); ?>
                         <?php if ($product['stock'] > 0): ?>
                         <button class="btn-add-cart" onclick="addToCart(<?php echo $product['id']; ?>)" title="Add to Cart">
                             <i class="fas fa-plus"></i>
@@ -190,6 +193,9 @@ $categoryIcons = [
                     <a href="<?php echo SITE_URL; ?>/pages/product-detail.php?id=<?php echo $product['id']; ?>">
                         <img src="<?php echo getProductImage($product['image']); ?>" alt="<?php echo sanitize($product['name']); ?>">
                     </a>
+                    <?php if (hasDiscount($product)): ?>
+                    <span class="discount-badge-card">-<?php echo getDiscountPercent($product); ?>% OFF</span>
+                    <?php endif; ?>
                 </div>
                 <div class="product-card-body">
                     <div class="product-card-brand"><?php echo sanitize($product['brand']); ?></div>
@@ -199,7 +205,7 @@ $categoryIcons = [
                         </a>
                     </h3>
                     <div class="product-card-footer">
-                        <span class="product-card-price"><?php echo formatPrice($product['price']); ?></span>
+                        <?php echo renderCardPrice($product); ?>
                         <?php if ($product['stock'] > 0): ?>
                         <button class="btn-add-cart" onclick="addToCart(<?php echo $product['id']; ?>)" title="Add to Cart">
                             <i class="fas fa-plus"></i>
